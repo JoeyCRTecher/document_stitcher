@@ -10,6 +10,7 @@ A simple Python tool to combine multiple PDF files into a single document.
 - ✅ Error handling for corrupted or encrypted PDFs
 - ✅ Customizable output filename and file patterns
 - ✅ Verbose mode for detailed processing information
+- ✅ Source filename display (shows which file each content came from)
 
 ## Installation
 
@@ -47,6 +48,11 @@ python pdf_stitcher.py -i "C:\documents" -p "chapter_*.pdf" -o book.pdf
 python pdf_stitcher.py -i "C:\pdfs" -v -o detailed_output.pdf
 ```
 
+6. **Disable source filename display:**
+```bash
+python pdf_stitcher.py -i "C:\pdfs" --no-source -o no_source_output.pdf
+```
+
 ### Command Line Options
 
 - `-i, --input-dir`: Directory containing PDF files to stitch
@@ -54,6 +60,7 @@ python pdf_stitcher.py -i "C:\pdfs" -v -o detailed_output.pdf
 - `-o, --output`: Output filename for the stitched PDF (default: stitched_document.pdf)
 - `-p, --pattern`: File pattern to match in input directory (default: *.pdf)
 - `-v, --verbose`: Enable verbose output
+- `--no-source`: Disable adding source filename before each PDF content
 - `--help`: Show help message
 
 ## How It Works
@@ -69,9 +76,11 @@ python pdf_stitcher.py -i "C:\pdfs" -v -o detailed_output.pdf
    - Adds all pages from valid PDFs to the output document
 
 3. **Output**: Creates a single stitched PDF with:
+   - Source filename pages (showing "source: filename.pdf" before each document's content)
    - All pages from source PDFs in order
    - Progress indication during processing
    - Summary statistics upon completion
+   - Option to disable source filename display with `--no-source` flag
 
 ## Error Handling
 
@@ -87,6 +96,7 @@ The program handles various error conditions:
 - Python 3.6+
 - pypdf (for PDF manipulation)
 - click (for command-line interface)
+- reportlab (for creating source filename pages)
 
 ## Examples of Common Use Cases
 
