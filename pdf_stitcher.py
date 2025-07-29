@@ -10,15 +10,46 @@ from pathlib import Path
 from typing import List, Optional
 import click
 from pypdf import PdfWriter, PdfReader
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from io import BytesIO
+
+
+def create_source_page(filename: str) -> bytes:
+    """
+    Create a simple PDF page showing the source filename.
+    
+    Args:
+        filename: The name of the source file
+        
+    Returns:
+        bytes: PDF data for the source page
+    """
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Add title and filename text
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(72, 720, f"Source: {os.path.basename(filename)}")
+    
+    # Add a simple line separator
+    c.line(72, 710, 540, 710)
+    
+    c.showPage()
+    c.save()
+    
+    buffer.seek(0)
+    return buffer.getvalue()
 
 
 class PDFStitcher:
     """A class to handle PDF stitching operations."""
     
-    def __init__(self):
+    def __init__(self, include_source: bool = True):
         self.writer = PdfWriter()
         self.processed_files = []
         self.failed_files = []
+        self.include_source = include_source
     
     def add_pdf(self, pdf_path: str) -> bool:
         """
@@ -31,6 +62,17 @@ class PDFStitcher:
             bool: True if successfully added, False otherwise
         """
         try:
+            # Add source page if enabled
+            if self.include_source:
+                source_pdf_data = create_source_page(pdf_path)
+                source_buffer = BytesIO(source_pdf_data)
+                source_reader = PdfReader(source_buffer)
+                
+                # Add the source page
+                for page in source_reader.pages:
+                    self.writer.add_page(page)
+            
+            # Add the actual PDF content
             with open(pdf_path, 'rb') as file:
                 reader = PdfReader(file)
                 
@@ -45,7 +87,8 @@ class PDFStitcher:
                     self.writer.add_page(page)
                 
                 self.processed_files.append(pdf_path)
-                click.echo(f"✅ Added: {os.path.basename(pdf_path)} ({len(reader.pages)} pages)")
+                source_info = " (with source page)" if self.include_source else ""
+                click.echo(f"✅ Added: {os.path.basename(pdf_path)} ({len(reader.pages)} pages{source_info})")
                 return True
                 
         except Exception as e:
@@ -107,7 +150,9 @@ def find_pdf_files(directory: str, pattern: str = "*.pdf") -> List[str]:
               help='File pattern to match in input directory (default: *.pdf)')
 @click.option('--verbose', '-v', is_flag=True,
               help='Enable verbose output')
-def main(input_dir: Optional[str], files: tuple, output: str, pattern: str, verbose: bool):
+@click.option('--no_source', is_flag=True,
+              help='Disable adding source filename to the PDF content (default: source filenames are included)')
+def main(input_dir: Optional[str], files: tuple, output: str, pattern: str, verbose: bool, no_source: bool):
     """
     PDF Stitcher - Combine multiple PDF files into a single document.
     
@@ -163,7 +208,7 @@ def main(input_dir: Optional[str], files: tuple, output: str, pattern: str, verb
         click.echo()
     
     # Create stitcher and process files
-    stitcher = PDFStitcher()
+    stitcher = PDFStitcher(include_source=not no_source)
     
     click.echo("🔄 Processing PDF files...")
     with click.progressbar(pdf_files, label='Stitching PDFs') as bar:

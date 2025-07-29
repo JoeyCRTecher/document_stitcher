@@ -11,7 +11,7 @@ def example_basic_stitching():
     print("Example: Basic PDF Stitching")
     print("=" * 40)
     
-    # Create a stitcher instance
+    # Create a stitcher instance (with source pages by default)
     stitcher = PDFStitcher()
     
     # Example PDF files (you would replace these with actual file paths)
